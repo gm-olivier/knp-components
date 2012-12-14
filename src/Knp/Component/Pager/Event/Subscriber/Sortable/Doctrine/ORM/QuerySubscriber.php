@@ -10,50 +10,57 @@ use Doctrine\ORM\Query;
 
 class QuerySubscriber implements EventSubscriberInterface
 {
+	protected function getParts( ItemsEvent $event, $fieldParam, $directionParam )
+	{
+		if (isset($_GET[$event->options[$fieldParam]])) {
+			$dir = isset($_GET[$event->options[$directionParam]]) && strtolower($_GET[$event->options[$directionParam]]) === 'asc' ? 'asc' : 'desc';
+			$parts = explode('.', $_GET[$event->options[$fieldParam]]);
+
+			if (isset($event->options['sortFieldWhitelist'])) {
+				if (!in_array($_GET[$event->options[$fieldParam]], $event->options['sortFieldWhitelist'])) {
+					throw new \UnexpectedValueException("Cannot sort by: [{$_GET[$event->options[$fieldParam]]}] this field is not in whitelist");
+                }
+            }
+        }
+        else
+        {
+        	$parts = null;
+        	$dir = null;
+        }
+        
+        return array( $parts, $dir );
+	}
+
+	protected function setHints( ItemsEvent $event, $parts, $dir, $field_hint, $direction_hint, $alias_hint )
+	{
+		if($parts !== null) {
+			$event->target
+				->setHint($direction_hint, $dir)
+				->setHint($field_hint, end($parts))
+			;
+			if (2 <= count($parts)) {
+				$event->target->setHint($alias_hint, reset($parts));
+			}
+		}
+	}
+
     public function items(ItemsEvent $event)
     {
         if ($event->target instanceof Query) {
-            $parts = null;
-            $group_parts = null;
-            if (isset($_GET[$event->options['sortFieldParameterName']])) {
-                $dir = isset($_GET[$event->options['sortDirectionParameterName']]) && strtolower($_GET[$event->options['sortDirectionParameterName']]) === 'asc' ? 'asc' : 'desc';
-                $parts = explode('.', $_GET[$event->options['sortFieldParameterName']]);
+            list( $parts, $dir ) = $this->getParts( $event, 'sortFieldParameterName', 'sortDirectionParameterName' );
+            list( $group_parts, $group_dir ) = $this->getParts( $event, 'groupFieldParameterName', 'groupDirectionParameterName' );
+            
+            $this->setHints( $event, $parts, $dir,
+            	OrderByWalker::HINT_PAGINATOR_SORT_FIELD,
+            	OrderByWalker::HINT_PAGINATOR_SORT_DIRECTION,
+            	OrderByWalker::HINT_PAGINATOR_SORT_ALIAS
+            );
+            $this->setHints( $event, $group_parts, $group_dir,
+            	OrderByWalker::HINT_PAGINATOR_GROUP_SORT_FIELD,
+            	OrderByWalker::HINT_PAGINATOR_GROUP_SORT_DIRECTION,
+            	OrderByWalker::HINT_PAGINATOR_GROUP_SORT_ALIAS
+            );
 
-                if (isset($event->options['sortFieldWhitelist'])) {
-                    if (!in_array($_GET[$event->options['sortFieldParameterName']], $event->options['sortFieldWhitelist'])) {
-                        throw new \UnexpectedValueException("Cannot sort by: [{$_GET[$event->options['sortFieldParameterName']]}] this field is not in whitelist");
-                    }
-                }
-            }
-            if (isset($_GET[$event->options['groupFieldParameterName']])) {
-                $group_dir = isset($_GET[$event->options['groupDirectionParameterName']]) && strtolower($_GET[$event->options['groupDirectionParameterName']]) === 'asc' ? 'asc' : 'desc';
-                $group_parts = explode('.', $_GET[$event->options['groupFieldParameterName']]);
-
-                if (isset($event->options['sortFieldWhitelist'])) {
-                    if (!in_array($_GET[$event->options['groupFieldParameterName']], $event->options['sortFieldWhitelist'])) {
-                        throw new \UnexpectedValueException("Cannot group by: [{$_GET[$event->options['groupFieldParameterName']]}] this field is not in whitelist");
-                    }
-                }
-            }
-
-            if($parts !== null) {
-                $event->target
-                    ->setHint(OrderByWalker::HINT_PAGINATOR_SORT_DIRECTION, $dir)
-                    ->setHint(OrderByWalker::HINT_PAGINATOR_SORT_FIELD, end($parts))
-                ;
-                if (2 <= count($parts)) {
-                    $event->target->setHint(OrderByWalker::HINT_PAGINATOR_SORT_ALIAS, reset($parts));
-                }
-            }
-            if($group_parts !== null) {
-                $event->target
-                    ->setHint(OrderByWalker::HINT_PAGINATOR_GROUP_SORT_DIRECTION, $group_dir)
-                    ->setHint(OrderByWalker::HINT_PAGINATOR_GROUP_SORT_FIELD, end($group_parts))
-                ;
-                if (2 <= count($group_parts)) {
-                    $event->target->setHint(OrderByWalker::HINT_PAGINATOR_GROUP_SORT_ALIAS, reset($group_parts));
-                }
-            }
             if($parts !== null || $group_parts !== null) {
                 QueryHelper::addCustomTreeWalker($event->target, 'Knp\Component\Pager\Event\Subscriber\Sortable\Doctrine\ORM\Query\OrderByWalker');
             }
