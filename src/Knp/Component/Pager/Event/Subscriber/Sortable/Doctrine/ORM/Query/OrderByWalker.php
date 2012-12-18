@@ -49,12 +49,13 @@ class OrderByWalker extends TreeWalkerAdapter
         }
 	}
 	
-	protected function createPathExpression( $alias, $field )
+	protected function createPathExpression( $alias, $field, $enabled )
 	{
+        $pathExpression = null;
         if ($alias !== false) {
             $pathExpression = new PathExpression(PathExpression::TYPE_STATE_FIELD, $alias, $field);
             $pathExpression->type = PathExpression::TYPE_STATE_FIELD;
-        } elseif($sorted) {
+        } elseif($enabled) {
             $pathExpression = $field;
         }
         
@@ -85,8 +86,8 @@ class OrderByWalker extends TreeWalkerAdapter
         $this->checkParams( $components, $alias, $field, $sorted );
         $this->checkParams( $components, $group_alias, $group_field, $grouped );
 
-		$pathExpression = $this->createPathExpression( $alias, $field );
-		$group_pathExpression = $this->createPathExpression( $group_alias, $group_field );
+		$pathExpression = $this->createPathExpression( $alias, $field, $sorted );
+		$group_pathExpression = $this->createPathExpression( $group_alias, $group_field, $grouped );
 
 		if($sorted) {
 	        $orderByItem = new OrderByItem($pathExpression);
