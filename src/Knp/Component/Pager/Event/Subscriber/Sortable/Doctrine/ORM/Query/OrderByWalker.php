@@ -19,18 +19,21 @@ class OrderByWalker extends TreeWalkerAdapter
      */
     const HINT_PAGINATOR_SORT_ALIAS = 'knp_paginator.sort.alias';
     const HINT_PAGINATOR_GROUP_SORT_ALIAS = 'knp_paginator.group_sort.alias';
+    const HINT_PAGINATOR_GROUP_ORDER_SORT_ALIAS = 'knp_paginator.group_order_sort.alias';
 
     /**
      * Sort key field hint name
      */
     const HINT_PAGINATOR_SORT_FIELD = 'knp_paginator.sort.field';
     const HINT_PAGINATOR_GROUP_SORT_FIELD = 'knp_paginator.group_sort.field';
+    const HINT_PAGINATOR_GROUP_ORDER_SORT_FIELD = 'knp_paginator.group_order_sort.field';
 
     /**
      * Sort direction hint name
      */
     const HINT_PAGINATOR_SORT_DIRECTION = 'knp_paginator.sort.direction';
     const HINT_PAGINATOR_GROUP_SORT_DIRECTION = 'knp_paginator.group_sort.direction';
+    const HINT_PAGINATOR_GROUP_ORDER_SORT_DIRECTION = 'knp_paginator.group_order_sort.direction';
 
 	protected function checkParams( $components, $alias, $field, $enabled )
 	{
@@ -78,6 +81,9 @@ class OrderByWalker extends TreeWalkerAdapter
         $group_field = $query->getHint(self::HINT_PAGINATOR_GROUP_SORT_FIELD);
         $group_alias = $query->getHint(self::HINT_PAGINATOR_GROUP_SORT_ALIAS);
         $group_direction = $query->getHint(self::HINT_PAGINATOR_GROUP_SORT_DIRECTION);
+        $group_order_field = $query->getHint(self::HINT_PAGINATOR_GROUP_ORDER_SORT_FIELD);
+        $group_order_alias = $query->getHint(self::HINT_PAGINATOR_GROUP_ORDER_SORT_ALIAS);
+        $group_order_direction = $query->getHint(self::HINT_PAGINATOR_GROUP_ORDER_SORT_DIRECTION);
 
 		$sorted = ( $field !== false );
 		$grouped = ( $group_field !== false );
@@ -85,9 +91,11 @@ class OrderByWalker extends TreeWalkerAdapter
         $components = $this->_getQueryComponents();
         $this->checkParams( $components, $alias, $field, $sorted );
         $this->checkParams( $components, $group_alias, $group_field, $grouped );
+        $this->checkParams( $components, $group_order_alias, $group_order_field, $grouped );
 
 		$pathExpression = $this->createPathExpression( $alias, $field, $sorted );
 		$group_pathExpression = $this->createPathExpression( $group_alias, $group_field, $grouped );
+		$group_order_pathExpression = $this->createPathExpression( $group_order_alias, $group_order_field, $grouped );
 
 		if($sorted) {
 	        $orderByItem = new OrderByItem($pathExpression);
@@ -97,6 +105,9 @@ class OrderByWalker extends TreeWalkerAdapter
         if($grouped) {
             $group_orderByItem = new OrderByItem($group_pathExpression);
             $group_orderByItem->type = $group_direction;
+
+            $group_order_orderByItem = new OrderByItem($group_order_pathExpression);
+            $group_order_orderByItem->type = $group_order_direction;
         }
 
         if ($AST->orderByClause) {
@@ -117,11 +128,14 @@ class OrderByWalker extends TreeWalkerAdapter
             }
             if ($grouped) {
                 array_unshift($AST->orderByClause->orderByItems, $group_orderByItem);
+                array_unshift($AST->orderByClause->orderByItems, $group_order_orderByItem);
             }
         } else {
             $clauses = array($orderByItem);
-            if($grouped)
+            if($grouped) {
                 array_unshift($clauses, $group_orderByItem);
+                array_unshift($clauses, $group_order_orderByItem);
+            }
             $AST->orderByClause = new OrderByClause($clauses);
         }
     }
