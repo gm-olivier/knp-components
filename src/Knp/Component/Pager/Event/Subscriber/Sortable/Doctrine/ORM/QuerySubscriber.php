@@ -43,12 +43,17 @@ class QuerySubscriber implements EventSubscriberInterface
        	$order_parts = null;
        	$dir = null;
 
-		if(
-			isset( $_GET[ $event->options[ $fieldParam ] ] ) &&
-			isset( $event->options['grouping_config'] )
-		)
+		if( isset( $event->options['grouping_config'] ) )
 		{
-			$group = $_GET[ $event->options[ $fieldParam ] ];
+			if( isset( $_GET[ $event->options[ $fieldParam ] ] ) )
+			{
+				$group = $_GET[ $event->options[ $fieldParam ] ];
+			}
+			else
+			{
+				$keys = array_keys( $event->options['grouping_config'] );
+				$group = $keys[0];
+			}
 
 			if( isset( $event->options['grouping_config'][ $group ] ) )
 			{
