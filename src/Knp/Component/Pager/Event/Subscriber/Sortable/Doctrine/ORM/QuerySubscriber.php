@@ -59,7 +59,7 @@ class QuerySubscriber implements EventSubscriberInterface
 			{
 				$grouping = $event->options['grouping_config'][ $group ];
 		
-				$dir = isset( $grouping['direction'] ) && strtolower( $grouping['direction'] ) === 'asc' ? 'asc' : 'desc';
+				$dir = isset( $grouping['direction'] ) && strtolower( $grouping['direction'] ) === 'desc' ? 'desc' : 'asc';
 				$group_parts = explode('.', $grouping['group_by']);
 				$order_parts = explode('.', $grouping['order_by']);
 
