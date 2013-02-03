@@ -25,6 +25,22 @@ class QuerySubscriber implements EventSubscriberInterface
                 }
             }
         }
+        elseif( isset( $event->options['grouping_config'] ) )
+        {
+			$grouping_config = $event->options['grouping_config'];
+			
+			$default_sort = $grouping_config->getDefaultSort();
+			if( $default_sort !== null )
+			{
+        		$parts = explode('.', $default_sort);
+        		$dir = strtolower( $grouping_config->getDefaultDirection() ) === 'asc' ? 'asc' : 'desc';
+			}
+			else
+			{
+    	    	$parts = null;
+	        	$dir = null;
+			}
+        }
         else
         {
         	$parts = null;
