@@ -57,8 +57,12 @@ class QuerySubscriber implements EventSubscriberInterface
                 if ($event->options['distinct']) {
                     // Get the calculated offset
                     $offset = $event->getOffset();
+                    // Calculate the maximum possible offset according to the number of results
+                    $max = $event->count - $event->getLimit();
+                    // If the maximum is under zero we set it at 0
+                    if( $max < 0 ) $max = 0;
                     // If the offset is too high
-                    if( $offset > ( $event->count - $event->getLimit() ) ) {
+                    if( $offset > $max ) {
                         // We set it to the maximmum results
                         $offset = $event->count - $event->getLimit();
                     }
