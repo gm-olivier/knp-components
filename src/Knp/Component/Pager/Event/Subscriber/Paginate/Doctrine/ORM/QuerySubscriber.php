@@ -55,9 +55,17 @@ class QuerySubscriber implements EventSubscriberInterface
             $result = null;
             if ($event->count) {
                 if ($event->options['distinct']) {
+                    // Get the calculated offset
+                    $offset = $event->getOffset();
+                    // If the offset is too high
+                    if( $offset > ( $event->count - $event->getLimit() ) ) {
+                        // We set it to the maximmum results
+                        $offset = $event->count - $event->getLimit();
+                    }
+
                     $limitSubQuery = QueryHelper::cloneQuery($event->target);
                     $limitSubQuery
-                        ->setFirstResult($event->getOffset())
+                        ->setFirstResult( $offset )
                         ->setMaxResults($event->getLimit())
                         ->useQueryCache(false)
                     ;
